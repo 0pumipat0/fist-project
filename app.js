@@ -4,11 +4,10 @@ const cors = require("cors");
 const app = express();
 
 app.use(cors());
-
 app.use(express.json());
 
 let db;
-const client = new MongoClient("mongodb://localhost:27017", {
+const client = new MongoClient("mongodb://10.53.1.24:27017", {
     useUnifiedTopology: true,
 });
 
@@ -18,7 +17,6 @@ client
         db = client.db("IIT");
         console.log("mongodb connected");
 
-        // ตรวจสอบการเชื่อมต่อ
         return db.command({ ping: 1 });
     })
     .then(() => {
@@ -29,7 +27,6 @@ client
         process.exit(1);
     });
 
-// Graceful shutdown: ปิดการเชื่อมต่อ MongoDB เมื่อเซิร์ฟเวอร์หยุดทำงาน
 process.on("SIGINT", async () => {
     await client.close();
     console.log("MongoDB connection closed.");
@@ -46,7 +43,7 @@ app.get('/number', async (req, res) => {
     }
 });
 
-//ดูเฉพาะตัวที่หา name
+// ดูเฉพาะตัวที่หา name
 app.get('/number/ID/:ID', async (req, res) => {
     try {
         const ID = req.params.ID;
@@ -62,8 +59,37 @@ app.get('/number/ID/:ID', async (req, res) => {
     }
 });
 
+// เพิ่มข้อมูล
+app.post('/number', async (req, res) => {
+    try {
+        const { ID, name } = req.body;
+        if (!ID || !name) {
+            return res.status(400).json({ error: "Missing ID or name" });
+        }
+        await db.collection("number").insertOne({ ID: parseInt(ID), name });
+        res.json({ message: "Student added successfully" });
+    } catch (err) {
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
 
-// เริ่มต้นเซิร์ฟเวอร์
+// ลบข้อมูล
+app.delete('/number/ID/:ID', async (req, res) => {
+    try {
+        const ID = req.params.ID;
+        const result = await db.collection("number").deleteOne({ ID: parseInt(ID) });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: "Student not found" });
+        }
+
+        res.json({ message: "Student deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
 app.listen(3000, () => {
     console.log('Server started : success');
 });
+

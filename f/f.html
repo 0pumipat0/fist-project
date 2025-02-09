@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Information</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 15px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #fff;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background: #d8a8ff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #b07acc;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #d8a8ff;
+            color: white;
+        }
+        input {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Student Information</h1>
+        
+        <div class="section">
+            <h2>All Students</h2>
+            <button onclick="fetchStudents()">Load All Students</button>
+            <table id="studentsTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Student data will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Find Student by ID</h2>
+            <input type="text" id="studentID" placeholder="Enter Student ID">
+            <button onclick="fetchStudentByID()">Search</button>
+            <div id="studentDetails"></div>
+        </div>
+
+        <div class="section">
+            <h2>Add Student</h2>
+            <input type="text" id="newStudentID" placeholder="Enter Student ID">
+            <input type="text" id="newStudentName" placeholder="Enter Student Name">
+            <button onclick="addStudent()">Add Student</button>
+        </div>
+    </div>
+
+    <script>
+        async function fetchStudents() {
+            try {
+                const response = await fetch('http://10.53.1.24:3000/number');
+                const data = await response.json();
+                
+                if (Array.isArray(data)) {
+                    const tableBody = document.getElementById('studentsTable').getElementsByTagName('tbody')[0];
+                    tableBody.innerHTML = '';
+
+                    data.forEach(student => {
+                        const row = tableBody.insertRow();
+                        row.insertCell(0).textContent = student.ID;
+                        row.insertCell(1).textContent = student.name;
+                        let deleteCell = row.insertCell(2);
+                        let deleteButton = document.createElement("button");
+                        deleteButton.textContent = "Delete";
+                        deleteButton.onclick = () => deleteStudent(student.ID);
+                        deleteCell.appendChild(deleteButton);
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching students:', error);
+            }
+        }
+
+        async function fetchStudentByID() {
+            const studentID = document.getElementById('studentID').value;
+            if (!studentID) {
+                alert('Please enter a student ID.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://10.53.1.24:3000/number/ID/${studentID}`);
+                const data = await response.json();
+                
+                const detailsDiv = document.getElementById('studentDetails');
+                if (response.status === 404) {
+                    detailsDiv.innerHTML = `<p>Student with ID ${studentID} not found.</p>`;
+                } else {
+                    detailsDiv.innerHTML = `
+                        <h3>Details for Student ID: ${data.ID}</h3>
+                        <p><strong>Name:</strong> ${data.name}</p>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error fetching student by ID:', error);
+                document.getElementById('studentDetails').innerHTML = `<p>Error fetching student details.</p>`;
+            }
+        }
+
+        async function addStudent() {
+            const ID = document.getElementById('newStudentID').value;
+            const name = document.getElementById('newStudentName').value;
+            
+            if (!ID || !name) {
+                alert('Please enter both ID and Name.');
+                return;
+            }
+            
+            try {
+                await fetch('http://10.53.1.24:3000/number/ID', {
+                    method: 'post',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ ID, name })
+                });
+                fetchStudents();
+            } catch (error) {
+                console.error('Error adding student:', error);
+            }
+        }
+
+        async function deleteStudent(ID) {
+            try {
+                await fetch(`http://10.53.1.24:3000/number/ID/${ID}`, {
+                    method: 'delete'
+                });
+                fetchStudents();
+            } catch (error) {
+                console.error('Error deleting student:', error);
+            }
+        }
+    </script>
+</body>
+</html>
