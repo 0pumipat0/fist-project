@@ -45,7 +45,7 @@ app.get('/number', async (req, res) => {
 });
 
 //ดูเฉพาะตัวที่หา name
-app.get('/product/name/:name', async (req, res) => {
+app.get('/number/name/:name', async (req, res) => {
     try {
         const name = req.params.name;
         const product = await db.collection("product").find({
