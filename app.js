@@ -34,9 +34,27 @@ process.on("SIGINT", async () => {
     process.exit(0);
 });
 
-// Route ที่ตัวอย่าง
-app.get("/", (req, res) => {
-    res.send("Hello, world!");
+// ดึงข้อมูลทั้งหมด
+app.get('/number', async (req, res) => {
+    try {
+        const number = await db.collection("number").find().toArray();
+        res.json(number);
+    } catch (err) {
+        res.json("error");
+    }
+});
+
+//ดูเฉพาะตัวที่หา name
+app.get('/product/name/:name', async (req, res) => {
+    try {
+        const name = req.params.name;
+        const product = await db.collection("product").find({
+            "name": { $in: [{ "name": name }] }
+        }).toArray();
+        res.json(product);
+    } catch (err) {
+        res.json("error");
+    }
 });
 
 // เริ่มต้นเซิร์ฟเวอร์
