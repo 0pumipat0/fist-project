@@ -1,7 +1,9 @@
 const express = require("express");
 const { MongoClient } = require("mongodb");
-
+const cors = require("cors");
 const app = express();
+
+app.use(cors());
 
 app.use(express.json());
 
@@ -45,17 +47,21 @@ app.get('/number', async (req, res) => {
 });
 
 //ดูเฉพาะตัวที่หา name
-app.get('/number/name/:name', async (req, res) => {
+app.get('/number/ID/:ID', async (req, res) => {
     try {
-        const name = req.params.name;
-        const product = await db.collection("product").find({
-            "name": { $in: [{ "name": name }] }
-        }).toArray();
-        res.json(product);
+        const ID = req.params.ID;
+        const student = await db.collection("number").findOne({ ID: parseInt(ID) });
+
+        if (!student) {
+            return res.status(404).json({ message: "Not found" });
+        }
+
+        res.json(student);
     } catch (err) {
-        res.json("error");
+        res.status(500).json({ error: "Internal Server Error" });
     }
 });
+
 
 // เริ่มต้นเซิร์ฟเวอร์
 app.listen(3000, () => {
