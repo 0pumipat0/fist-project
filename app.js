@@ -7,7 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 let db;
-const client = new MongoClient("mongodb://10.53.1.24:27017", {
+const client = new MongoClient("mongodb://localhost:27017", {
     useUnifiedTopology: true,
 });
 
@@ -59,22 +59,43 @@ app.get('/number/ID/:ID', async (req, res) => {
     }
 });
 
-// เพิ่มข้อมูล
 app.post('/number', async (req, res) => {
     try {
         const { ID, name } = req.body;
+
+        // Validation: Check if ID and name are provided and ID is a valid number
         if (!ID || !name) {
             return res.status(400).json({ error: "Missing ID or name" });
         }
-        await db.collection("number").insertOne({ ID: parseInt(ID), name });
-        res.json({ message: "Student added successfully" });
+
+        const numericID = Number(ID);
+
+        // Validate if ID is a valid number
+        if (isNaN(numericID)) {
+            return res.status(400).json({ error: "Invalid ID format" });
+        }
+
+        // Insert data into the database
+        const number = await db.collection("number").insertOne({ ID: numericID, name });
+
+        // Return a response with the inserted document data
+        res.status(201).json({
+            message: "Number added successfully",
+            insertedID: number.insertedId,
+            data: {
+                ID: numericID,
+                name
+            }
+        });
     } catch (err) {
+        console.error(err);  // Log the error for debugging
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
 
+
 // ลบข้อมูล
-app.delete('/number/ID/:ID', async (req, res) => {
+app.delete('/number/:ID', async (req, res) => {
     try {
         const ID = req.params.ID;
         const result = await db.collection("number").deleteOne({ ID: parseInt(ID) });
